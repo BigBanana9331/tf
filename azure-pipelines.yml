@@ -10,15 +10,21 @@ parameters:
     default: 'Default'
     values:
       - 'Default'
-  - name: Actions
-    displayName: 'Actions'
+  - name: mode
+    displayName: 'Planning Mode'
     type: string
-    default: 'Create'
+    default: ''
     values:
-      - 'Create'
-      - 'Destroy'
+      - ''
+      - 'destroy'
+      - 'refresh-only'
 
 trigger: none
+
+variables:
+  ${{ if ne(parameters.mode, '') }}:
+  - name: option
+    value: strcat("-", lowercase(${{ parameters.mode }}))
 
 stages:
   - stage: Init
@@ -30,15 +36,20 @@ stages:
             displayName: 'Terraform Init'
           - script: terraform validate
             displayName: 'Terraform Validate'
+          - script: terraform fmt -check
+            displayName: 'Terraform Format Check'
+          
   - stage: Create
     condition: and(succeeded(), eq(parameters['Actions'], 'Create'))
     jobs:
       - job: Plan
         pool: ${{ parameters.pool }}
         steps:
-          - script: terraform plan
+          - script: terraform plan ${{ variables.option }}
             displayName: 'Terraform Plan'
       - deployment: Create
+        dependsOn: Plan
+        condition: and(succeeded() , ne(parameters['mode'], 'destroy'))
         pool: ${{ parameters.pool }}
         environment: 'Dev'
         strategy:
@@ -47,18 +58,35 @@ stages:
               steps:
                 - script: terraform apply -auto-approve
                   displayName: 'Terraform Apply'
-      # - job: Apply
-      #   condition: succeeded()
-      #   pool: ${{ parameters.pool }}
-      #   steps:
-      #     - script: terraform apply -auto-approve
-      #       displayName: 'Terraform Apply'
-      
-  - stage: Destroy
-    condition: and(succeeded(), eq(parameters['Actions'], 'Destroy'))
-    jobs:
-      - job: Destroy
+                - script: terraform output
+                  displayName: 'Terraform Output'
+                - script: terraform show
+                  displayName: 'Terraform Show'
+                - script: terraform state list
+                  displayName: 'Terraform State List'
+                - script: terraform state show module.rg.azurerm_resource_group.rg
+                  displayName: 'Terraform State Show'
+                - script: terraform state show module.rg.azurerm_resource_group.rg | jq -r '.outputs'
+                  displayName: 'Terraform State Show Outputs'
+      - deployment: Destroy
+        dependsOn: Plan
+        condition: and(succeeded() , eq(parameters['mode'], 'destroy'))
         pool: ${{ parameters.pool }}
-        steps:
-          - script: terraform destroy -auto-approve
-            displayName: 'Terraform Destroy'
+        environment: 'Dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: terraform destroy -auto-approve
+                  displayName: 'Terraform Destroy'
+                - script: terraform output
+                  displayName: 'Terraform Output'
+                - script: terraform show
+                  displayName: 'Terraform Show'
+                - script: terraform state list
+                  displayName: 'Terraform State List'
+                - script: terraform state show module.rg.azurerm_resource_group.rg  | jq -r '.outputs'
+                  displayName: 'Terraform State Show Outputs'
+
+                
+                
