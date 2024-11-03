@@ -42,7 +42,7 @@ stages:
             displayName: 'Terraform Format Check'
           
   - stage: Create
-    condition: and(succeeded(), eq(parameters['Actions'], 'Create'))
+    condition: and(succeeded(), eq(parameters['mode'], 'create'))
     jobs:
       - job: Plan
         pool: ${{ parameters.pool }}
