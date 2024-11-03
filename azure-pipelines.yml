@@ -3,16 +3,55 @@
 # Add steps that build, run tests, deploy, and more:
 # https://aka.ms/yaml
 
+parameters:
+  - name: pool
+    displayName: Agent Pool
+    type: string
+    default: 'Default'
+    values:
+      - 'Default'
+  - name: Actions
+    displayName: 'Actions'
+    type: string
+    default: 'Create'
+    values:
+      - 'Create'
+      - 'Destroy'
+
 trigger: none
 
-pool:
-  vmImage: ubuntu-latest
-
-steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
-
-- script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+stages:
+  - stage: Init
+    jobs:
+      - job: Init
+        pool: ${{ parameters.pool }}
+        steps:
+          - script: terraform init
+            displayName: 'Terraform Init'
+          - script: terraform validate
+            displayName: 'Terraform Validate'
+  - stage: Plan
+    condition: and(succeeded(), eq(parameters['Actions'], 'Create'))
+    jobs:
+      - job: Plan
+        pool: ${{ parameters.pool }}
+        steps:
+          - script: terraform plan
+            displayName: 'Terraform Plan'
+  - stage: Apply
+    condition: and(succeeded(), eq(parameters['Actions'], 'Create'))
+    dependsOn: Plan
+    jobs:
+      - job: Apply
+        pool: ${{ parameters.pool }}
+        steps:
+          - script: terraform apply -auto-approve
+            displayName: 'Terraform Apply'
+  - stage: Destroy
+    condition: and(succeeded(), eq(parameters['Actions'], 'Destroy'))
+    jobs:
+      - job: Destroy
+        pool: ${{ parameters.pool }}
+        steps:
+          - script: terraform destroy -auto-approve
+            displayName: 'Terraform Destroy'
