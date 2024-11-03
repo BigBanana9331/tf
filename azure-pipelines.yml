@@ -22,8 +22,8 @@ parameters:
 trigger: none
 
 variables:
-  - name: test
-    value: 'abc'
+  - name: mode
+    value: ${{ parameters.mode }}
   - ${{ if ne(parameters.mode, 'create') }}:
       - name: option
         value: strcat("-", lowercase(${{ parameters.mode }}))
@@ -42,7 +42,7 @@ stages:
             displayName: 'Terraform Format Check'
           
   - stage: Create
-    condition: and(succeeded(), eq(parameters['mode'], 'create'))
+    condition: and(succeeded(), eq(variables['mode'], 'create'))
     jobs:
       - job: Plan
         pool: ${{ parameters.pool }}
@@ -51,7 +51,7 @@ stages:
             displayName: 'Terraform Plan'
       - deployment: Create
         dependsOn: Plan
-        condition: and(succeeded() , ne(parameters['mode'], 'destroy'))
+        condition: and(succeeded() , ne(variables['mode'], 'destroy'))
         pool: ${{ parameters.pool }}
         environment: 'Dev'
         strategy:
@@ -72,7 +72,7 @@ stages:
                   displayName: 'Terraform State Show Outputs'
       - deployment: Destroy
         dependsOn: Plan
-        condition: and(succeeded() , eq(parameters['mode'], 'destroy'))
+        condition: and(succeeded() , eq(variables['mode'], 'destroy'))
         pool: ${{ parameters.pool }}
         environment: 'Dev'
         strategy:
