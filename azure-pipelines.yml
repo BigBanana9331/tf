@@ -13,16 +13,16 @@ parameters:
   - name: mode
     displayName: 'Planning Mode'
     type: string
-    default: ''
+    default: 'create'
     values:
-      - ''
+      - 'create'
       - 'destroy'
       - 'refresh-only'
 
 trigger: none
 
 variables:
-  ${{ if ne(parameters.mode, '') }}:
+  ${{ if ne(parameters.mode, 'create') }}:
   - name: option
     value: strcat("-", lowercase(${{ parameters.mode }}))
 
