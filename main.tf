@@ -32,7 +32,7 @@ resource "azurerm_virtual_machine" "vm" {
   name                  = var.virtual_machine_name
   location              = data.azurerm_resource_group.rg.location
   resource_group_name   = data.azurerm_resource_group.rg.name
-  network_interface_ids = [azurerm_network_interface.example.id]
+  network_interface_ids = [azurerm_network_interface.nic.id]
   vm_size               = var.virtual_machine_size
 
   storage_os_disk {
