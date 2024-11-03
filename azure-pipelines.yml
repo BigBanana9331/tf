@@ -29,9 +29,10 @@ variables:
         value: strcat("-", lowercase(${{ parameters.mode }}))
 
 stages:
-  - stage: Init
+  - stage: Create
+    condition: and(succeeded(), eq(variables['mode'], 'create'))
     jobs:
-      - job: Init
+      - job: Plan
         pool: ${{ parameters.pool }}
         steps:
           - script: terraform init
@@ -40,13 +41,6 @@ stages:
             displayName: 'Terraform Validate'
           - script: terraform fmt -check
             displayName: 'Terraform Format Check'
-          
-  - stage: Create
-    condition: and(succeeded(), eq(variables['mode'], 'create'))
-    jobs:
-      - job: Plan
-        pool: ${{ parameters.pool }}
-        steps:
           - script: terraform plan ${{ variables.option }}
             displayName: 'Terraform Plan'
       - deployment: Create
