@@ -22,7 +22,7 @@ resource "azurerm_network_interface" "nic" {
   resource_group_name = data.azurerm_resource_group.rg.name
 
   ip_configuration {
-    name                          = var.nic_name
+    name                          = "internal"
     subnet_id                     = azurerm_subnet.subnet.id
     private_ip_address_allocation = var.private_ip_address_allocation
   }
