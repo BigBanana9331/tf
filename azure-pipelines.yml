@@ -30,7 +30,7 @@ stages:
             displayName: 'Terraform Init'
           - script: terraform validate
             displayName: 'Terraform Validate'
-  - stage: Plan
+  - stage: Create
     condition: and(succeeded(), eq(parameters['Actions'], 'Create'))
     jobs:
       - job: Plan
@@ -38,15 +38,22 @@ stages:
         steps:
           - script: terraform plan
             displayName: 'Terraform Plan'
-  - stage: Apply
-    condition: and(succeeded(), eq(parameters['Actions'], 'Create'))
-    dependsOn: Plan
-    jobs:
-      - job: Apply
+      - deployment: Create
         pool: ${{ parameters.pool }}
-        steps:
-          - script: terraform apply -auto-approve
-            displayName: 'Terraform Apply'
+        environment: 'Dev'
+        strategy:
+          runOnce:
+            deploy:
+              steps:
+                - script: terraform apply -auto-approve
+                  displayName: 'Terraform Apply'
+      # - job: Apply
+      #   condition: succeeded()
+      #   pool: ${{ parameters.pool }}
+      #   steps:
+      #     - script: terraform apply -auto-approve
+      #       displayName: 'Terraform Apply'
+      
   - stage: Destroy
     condition: and(succeeded(), eq(parameters['Actions'], 'Destroy'))
     jobs:
