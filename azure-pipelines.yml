@@ -22,9 +22,11 @@ parameters:
 trigger: none
 
 variables:
-  ${{ if ne(parameters.mode, 'create') }}:
-  - name: option
-    value: strcat("-", lowercase(${{ parameters.mode }}))
+  - name: test
+    value: 'abc'
+  - ${{ if ne(parameters.mode, 'create') }}:
+      - name: option
+        value: strcat("-", lowercase(${{ parameters.mode }}))
 
 stages:
   - stage: Init
